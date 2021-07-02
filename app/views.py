@@ -1,58 +1,57 @@
 
-from django.http import JsonResponse , HttpResponse
-from django.http.response import Http404
-from rest_framework import serializers
+import rest_framework
 from app.models import Employee 
+from django.http import JsonResponse
 from app.serializers import EmployeeSerializer, UserSerializer
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.parsers import JSONParser
 from django.contrib.auth.models import User
 from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-# function bassed view start
 
-@csrf_exempt
+@api_view(['GET', 'POST'])
 def employeeListView(request):
     if request.method=='GET':
         employees = Employee.objects.all()
         serializer = EmployeeSerializer(employees , many = True)
-        return JsonResponse(serializer.data , safe=False)
+        return Response(serializer.data)
 
     elif request.method=='POST':
-        jsonData = JSONParser().parse(request)
-        serializer = EmployeeSerializer(data=jsonData)
+        
+        serializer = EmployeeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data , safe=False)
+            return Response(serializer.data )
         else:
-            return JsonResponse(serializer.errors , safe=False)
+            return Response(serializer.errors )
 
-@csrf_exempt
+@api_view(['GET', 'DELETE','PUT'])
 def employeeDetailView(request , pk):
     try:
         employee = Employee.objects.get(pk=pk)
     except Employee.DoesNotExist:
-        return HttpResponse(status = 404)
+        return Response(status = 404)
 
     if request.method=='GET':
         serializer = EmployeeSerializer(employee)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
         
     if request.method=='DELETE':
         employee.delete()
-        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
         
     if request.method=='PUT':
-        data = JSONParser().parse(request)
-        serializer = EmployeeSerializer(employee , data=data)
+        
+        serializer = EmployeeSerializer(employee , data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data , safe=False)
-        return JsonResponse(serializer.errors , safe=False)
-        
+            return Response(serializer.data )
+        return Response(serializer.errors )
+@api_view(['GET'])       
 def UserListView(request):
-    user = User.objects.all()
-    serializer = UserSerializer(user , many = True)
-    return JsonResponse(serializer.data , safe=False)
+    if request.method =='GET':
+        user = User.objects.all()
+        serializer = UserSerializer(user, many=True)
+        return Response(serializer.data )
 
 # function bassed view end
